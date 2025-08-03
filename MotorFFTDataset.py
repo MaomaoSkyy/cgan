@@ -33,6 +33,17 @@ class MotorFFTDataset(Dataset):
                     if len(parts) >= 2:
                         self.label_map[parts[0]] = int(parts[1])
 
+        # Pre-compute labels for all files and determine class count
+        self.labels = []
+        for fname in self.file_list:
+            if fname in self.label_map:
+                label = self.label_map[fname]
+            else:
+                match = re.search(r"(\d+)(?=\.npy$)", fname)
+                label = int(match.group(1)) if match else 0
+            self.labels.append(label)
+        self.num_classes = len(set(self.labels))
+
     def __len__(self):
         return len(self.file_list)
 
@@ -49,12 +60,7 @@ class MotorFFTDataset(Dataset):
 
         spec_tensor = torch.from_numpy(data).float().unsqueeze(0)  # [1, C, L]
 
-        # Resolve label either from external map or filename pattern
-        if file_name in self.label_map:
-            label = self.label_map[file_name]
-        else:
-            match = re.search(r"(\d+)(?=\.npy$)", file_name)
-            label = int(match.group(1)) if match else 0
-        label_tensor = torch.tensor(label, dtype=torch.long)
+        # Use pre-computed labels
+        label_tensor = torch.tensor(self.labels[idx], dtype=torch.long)
 
         return spec_tensor, label_tensor
