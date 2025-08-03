@@ -96,11 +96,15 @@ def main_worker(gpu, ngpus_per_node, args):
     num_classes = len({int(f.split("_label_")[-1].split(".")[0])
                        for f in os.listdir(data_dir) if f.endswith(".npy")})
 
+    # FFT 数据的通道数与频谱长度
+    channels = 6
+    seq_len = 128
+
     # import network
     # Generator: 输出 shape 要与数据一致 -> [batch, channels, 1, seq_len]
     gen_net = Generator(
-        seq_len=256,  # 频谱长度
-        channels=8,  # 频谱通道数
+        seq_len=seq_len,  # 频谱长度
+        channels=channels,  # 频谱通道数
         num_classes=num_classes,  # 标签类别数
         latent_dim=128,
         data_embed_dim=10,
@@ -113,11 +117,11 @@ def main_worker(gpu, ngpus_per_node, args):
     print(gen_net)
     # Discriminator: 输入 shape 要匹配生成器输出
     dis_net = Discriminator(
-        in_channels=gen_net.channels,
+        in_channels=channels,
         patch_size=1,
         data_emb_size=50,
         label_emb_size=32,
-        seq_length=gen_net.seq_len,
+        seq_length=seq_len,
         depth=3,
         n_classes=num_classes
     )
