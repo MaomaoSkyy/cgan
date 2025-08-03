@@ -49,11 +49,8 @@ class Generator(nn.Module):
         H, W = 1, self.seq_len
         x = self.blocks(x)
         x = x.reshape(x.shape[0], 1, x.shape[1], x.shape[2])
-        output = self.deconv(x.permute(0, 3, 1, 2))
-        print("z shape:", z.shape)
-        print("label embedding shape:", self.label_embedding(labels).shape)
-        print("concatenated shape:", x.shape)
-        return output 
+        output = self.deconv(x.permute(0, 3, 1, 2)).permute(0, 2, 1, 3)
+        return output
 
 
 class Gen_TransformerEncoderBlock(nn.Sequential):
