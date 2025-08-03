@@ -92,29 +92,29 @@ def main_worker(gpu, ngpus_per_node, args):
             nn.init.constant_(m.bias.data, 0.0)
 
     # import network
-    # Generator: 输出 shape 要与数据一致 -> [1, 6, 128]
+    # Generator: 输出 shape 要与数据一致 -> [1, 8, 256]
     gen_net = Generator(
-        seq_len=128,  # 原来是 187，改为 128
-        channels=6,  # 原来是 1，改为 6（与频谱通道一致）
-        num_classes=5,  # 按你的 label 类别数修改
-        latent_dim=100,
+        seq_len=256,  # 频谱长度
+        channels=8,  # 频谱通道数
+        num_classes=10,  # 标签类别数
+        latent_dim=128,
         data_embed_dim=10,
-        label_embed_dim=10,
+        label_embed_dim=32,
         depth=3,
         num_heads=5,
         forward_drop_rate=0.5,
         attn_drop_rate=0.5
     )
     print(gen_net)
-    # Discriminator: 输入 shape 要匹配 -> [1, 6, 128]
+    # Discriminator: 输入 shape 要匹配 -> [1, 8, 256]
     dis_net = Discriminator(
-        in_channels=6,  # 原来是 1，改为 6
+        in_channels=8,
         patch_size=1,
         data_emb_size=50,
-        label_emb_size=10,
-        seq_length=128,  # 原来是 187，改为 128
+        label_emb_size=32,
+        seq_length=256,
         depth=3,
-        n_classes=5
+        n_classes=10
     )
     print(dis_net)
 
@@ -280,7 +280,7 @@ def main_worker(gpu, ngpus_per_node, args):
         }, is_best, args.path_helper['ckpt_path'], filename="checkpoint")
         del avg_gen_net
         
-def gen_plot(gen_net, epoch, num_classes=5, latent_dim=100):
+def gen_plot(gen_net, epoch, num_classes=10, latent_dim=128):
     """
     生成并可视化 CGAN 生成的频谱图（而非时域曲线）。
     期望 gen_net(z, y) 的输出是 [B, C, F] 或 [B, 1, C, F]。
