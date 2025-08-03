@@ -4,9 +4,10 @@ from __future__ import print_function
 
 import cfg
 from DataLoader import *
-from TransCGAN_model import * 
+from TransCGAN_model import *
 from cgan_functions import train, save_samples, LinearLrDecay, load_params, copy_params, cur_stages
 from utils import set_log_dir, save_checkpoint, create_logger
+from MotorFFTDataset import MotorFFTDataset
 
 import torch
 import torch.multiprocessing as mp
@@ -93,8 +94,8 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Determine dataset information
     data_dir = "E:/Downloads/tts-cgan-main/tts-cgan-main/data/processed_fft"
-    num_classes = len({int(f.split("_label_")[-1].split(".")[0])
-                       for f in os.listdir(data_dir) if f.endswith(".npy")})
+    train_set = MotorFFTDataset(data_dir=data_dir)
+    num_classes = train_set.num_classes
 
     # FFT 数据的通道数与频谱长度
     channels = 6
@@ -185,9 +186,6 @@ def main_worker(gpu, ngpus_per_node, args):
     args.max_epoch = args.max_epoch * args.n_critic
     
     #load dataset
-    from MotorFFTDataset import MotorFFTDataset
-
-    train_set = MotorFFTDataset(data_dir=data_dir)
     train_loader = data.DataLoader(
         train_set,
         batch_size=args.batch_size,  # 先用 16
