@@ -63,7 +63,10 @@ def main():
         
 def main_worker(gpu, ngpus_per_node, args):
     args.gpu = gpu
-    
+
+    if not args.distributed:
+        args.rank = 0
+
     if args.gpu is not None:
         print("Use GPU: {} for training".format(args.gpu))
 
@@ -281,7 +284,8 @@ def main_worker(gpu, ngpus_per_node, args):
         plot_buf = gen_plot(gen_net, epoch)
         image = PIL.Image.open(plot_buf)
         image = ToTensor()(image).unsqueeze(0)
-        writer.add_image('Image', image[0], epoch)
+        if writer:
+            writer.add_image('Image', image[0], epoch)
         is_best = False
         avg_gen_net = deepcopy(gen_net)
         load_params(avg_gen_net, gen_avg_param, args)
