@@ -228,13 +228,13 @@ class PatchEmbedding_Linear(nn.Module):
 
 class Discriminator(nn.Sequential):
     def __init__(self,
-                 in_channels=8,
+                 in_channels=6,
                  patch_size=1,
                  data_emb_size=50,
                  label_emb_size=32,
-                 seq_length=256,
+                 seq_length=128,
                  depth=3,
-                 n_classes=10,
+                 n_classes=5,
                  **kwargs):
         super().__init__(
             PatchEmbedding_Linear(in_channels, patch_size, data_emb_size, seq_length),
