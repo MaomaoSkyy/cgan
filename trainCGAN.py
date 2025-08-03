@@ -91,12 +91,17 @@ def main_worker(gpu, ngpus_per_node, args):
             nn.init.normal_(m.weight.data, 1.0, 0.02)
             nn.init.constant_(m.bias.data, 0.0)
 
+    # Determine dataset information
+    data_dir = "E:/Downloads/tts-cgan-main/tts-cgan-main/data/processed_fft"
+    num_classes = len({int(f.split("_label_")[-1].split(".")[0])
+                       for f in os.listdir(data_dir) if f.endswith(".npy")})
+
     # import network
-    # Generator: 输出 shape 要与数据一致 -> [1, 8, 256]
+    # Generator: 输出 shape 要与数据一致 -> [batch, channels, 1, seq_len]
     gen_net = Generator(
         seq_len=256,  # 频谱长度
         channels=8,  # 频谱通道数
-        num_classes=10,  # 标签类别数
+        num_classes=num_classes,  # 标签类别数
         latent_dim=128,
         data_embed_dim=10,
         label_embed_dim=32,
@@ -106,15 +111,15 @@ def main_worker(gpu, ngpus_per_node, args):
         attn_drop_rate=0.5
     )
     print(gen_net)
-    # Discriminator: 输入 shape 要匹配 -> [1, 8, 256]
+    # Discriminator: 输入 shape 要匹配生成器输出
     dis_net = Discriminator(
-        in_channels=8,
+        in_channels=gen_net.channels,
         patch_size=1,
         data_emb_size=50,
         label_emb_size=32,
-        seq_length=256,
+        seq_length=gen_net.seq_len,
         depth=3,
-        n_classes=10
+        n_classes=num_classes
     )
     print(dis_net)
 
@@ -178,7 +183,7 @@ def main_worker(gpu, ngpus_per_node, args):
     #load dataset
     from MotorFFTDataset import MotorFFTDataset
 
-    train_set = MotorFFTDataset(data_dir="E:/Downloads/tts-cgan-main/tts-cgan-main/data/processed_fft")
+    train_set = MotorFFTDataset(data_dir=data_dir)
     train_loader = data.DataLoader(
         train_set,
         batch_size=args.batch_size,  # 先用 16
@@ -186,6 +191,19 @@ def main_worker(gpu, ngpus_per_node, args):
         shuffle=True,
         drop_last=True
     )
+
+    if args.rank == 0:
+        real_batch, _ = next(iter(train_loader))
+        expected_shape = (real_batch.size(0), gen_net.channels, 1, gen_net.seq_len)
+        if real_batch.shape != expected_shape:
+            real_batch = real_batch.permute(0, 2, 1, 3)
+        assert real_batch.shape == expected_shape, (
+            f"Real sample shape {real_batch.shape} does not match expected {expected_shape}"
+        )
+        device = next(dis_net.parameters()).device
+        with torch.no_grad():
+            adv_out, cls_out = dis_net(real_batch.to(device).permute(0, 2, 1, 3))
+        print('Discriminator output shapes:', adv_out.shape, cls_out.shape)
 
     if args.max_iter:
         args.max_epoch = np.ceil(args.max_iter * args.n_critic / len(train_loader))
