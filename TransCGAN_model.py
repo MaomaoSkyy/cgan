@@ -11,8 +11,8 @@ from einops.layers.torch import Rearrange, Reduce
 from torchsummary import summary
 
 class Generator(nn.Module):
-    def __init__(self, seq_len=150, channels=3, num_classes=9, latent_dim=100, data_embed_dim=10, 
-                label_embed_dim=10 ,depth=3, num_heads=5, 
+    def __init__(self, seq_len=256, channels=8, num_classes=10, latent_dim=128, data_embed_dim=10,
+                label_embed_dim=32 ,depth=3, num_heads=5,
                 forward_drop_rate=0.5, attn_drop_rate=0.5):
         super(Generator, self).__init__()
         self.seq_len = seq_len
