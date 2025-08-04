@@ -96,7 +96,7 @@ def main_worker(gpu, ngpus_per_node, args):
             nn.init.constant_(m.bias.data, 0.0)
 
     # Determine dataset information
-    data_dir = args.fft_dir
+    data_dir = os.path.join('data', 'processed_fft')
     train_set = MotorFFTDataset(data_dir=data_dir)
     num_classes = train_set.num_classes
 
