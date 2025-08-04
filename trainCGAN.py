@@ -91,13 +91,25 @@ def main_worker(gpu, ngpus_per_node, args):
             nn.init.normal_(m.weight.data, 1.0, 0.02)
             nn.init.constant_(m.bias.data, 0.0)
 
+    # load dataset to determine sequence length and class count
+    if args.dataset == "motor_fault":
+        train_set = motor_fault_train()
+    else:
+        train_set = mitbih_train()
+
+    train_loader = data.DataLoader(train_set, batch_size=args.batch_size,
+                                   num_workers=args.num_workers, shuffle=True)
+    seq_len = train_set.X_train.shape[-1]
+    num_classes = len(np.unique(train_set.y_train))
+
     # import network
-    gen_net = Generator(seq_len=187, channels=1, num_classes=5, latent_dim=100, data_embed_dim=10, 
-                        label_embed_dim=10 ,depth=3, num_heads=5, 
+    gen_net = Generator(seq_len=seq_len, channels=1, num_classes=num_classes, latent_dim=100, data_embed_dim=10,
+                        label_embed_dim=10, depth=3, num_heads=5,
                         forward_drop_rate=0.5, attn_drop_rate=0.5)
-    
+
     print(gen_net)
-    dis_net = Discriminator(in_channels=1, patch_size=1, data_emb_size=50, label_emb_size=10, seq_length = 187, depth=3, n_classes=5)
+    dis_net = Discriminator(in_channels=1, patch_size=1, data_emb_size=50, label_emb_size=10,
+                            seq_length=seq_len, depth=3, n_classes=num_classes)
     print(dis_net)
     
     if not torch.cuda.is_available():
@@ -156,10 +168,6 @@ def main_worker(gpu, ngpus_per_node, args):
 
 
     args.max_epoch = args.max_epoch * args.n_critic
-    
-    #load dataset
-    train_set = mitbih_train()
-    train_loader = data.DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=True)
     
     if args.max_iter:
         args.max_epoch = np.ceil(args.max_iter * args.n_critic / len(train_loader))
