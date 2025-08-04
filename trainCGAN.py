@@ -96,13 +96,14 @@ def main_worker(gpu, ngpus_per_node, args):
             nn.init.constant_(m.bias.data, 0.0)
 
     # Determine dataset information
-    data_dir = "E:/Downloads/tts-cgan-main/tts-cgan-main/data/processed_fft"
+    data_dir = os.path.join('data', 'processed_fft')
     train_set = MotorFFTDataset(data_dir=data_dir)
     num_classes = train_set.num_classes
 
-    # FFT 数据的通道数与频谱长度
-    channels = 6
-    seq_len = 128
+    # Infer FFT channel count and sequence length from a sample
+    sample_spec, _ = train_set[0]
+    channels = sample_spec.shape[1]
+    seq_len = sample_spec.shape[2]
 
     # import network
     # Generator: 输出 shape 要与数据一致 -> [batch, channels, 1, seq_len]
@@ -281,7 +282,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         # plot synthetic data
         gen_net.eval()
-        plot_buf = gen_plot(gen_net, epoch)
+        plot_buf = gen_plot(gen_net, epoch, num_classes=num_classes, latent_dim=args.latent_dim)
         image = PIL.Image.open(plot_buf)
         image = ToTensor()(image).unsqueeze(0)
         if writer:
