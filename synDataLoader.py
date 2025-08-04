@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from TransCGAN_model import *
-from DataLoader import mitbih_train
+from DataLoader import mitbih_train, motor_fault_train
 
 # Ignore warnings
 import warnings
@@ -72,5 +72,59 @@ class mixed_mitbih(Dataset):
     def __len__(self):
         return len(self.labels)
     
+    def __getitem__(self, idx):
+        return self.data[idx], self.labels[idx]
+
+
+class syn_motor_fault(Dataset):
+    def __init__(self, n_samples=1000, seq_len=8, n_classes=2, reshape=False, model_path='./mitbih_checkpoint'):
+        gen_net = Generator(seq_len=seq_len, channels=1, num_classes=n_classes, latent_dim=100, data_embed_dim=10,
+                            label_embed_dim=10, depth=3, num_heads=5,
+                            forward_drop_rate=0.5, attn_drop_rate=0.5)
+        GAN_ckp = torch.load(model_path)
+        gen_net.load_state_dict(GAN_ckp['gen_state_dict'])
+
+        data = []
+        labels = []
+        for cls in range(n_classes):
+            syn_cls = self.generate_synthetic_data(gen_net, cls, n_samples)
+            if reshape:
+                syn_cls = syn_cls.reshape(syn_cls.shape[0], 1, syn_cls.shape[3])
+            data.append(syn_cls)
+            labels.append(np.array([cls] * n_samples))
+
+        self.data = np.concatenate(data, axis=0)
+        self.labels = np.concatenate(labels, axis=0)
+
+        print(f'data shape is {self.data.shape}')
+        print(f'labels shape is {self.labels.shape}')
+
+    def generate_synthetic_data(self, gen_net, classlabel, n):
+        fake_noise = torch.FloatTensor(np.random.normal(0, 1, (n, 100)))
+        fake_label = torch.tensor([classlabel] * n)
+        fake_sigs = gen_net(fake_noise, fake_label).to('cpu').detach().numpy()
+        return fake_sigs
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        return self.data[idx], self.labels[idx]
+
+
+class mixed_motor_fault(Dataset):
+    def __init__(self, real_samples=200, syn_samples=800, seq_len=8, model_path='./mitbih_checkpoint'):
+        syn_data = syn_motor_fault(n_samples=syn_samples, seq_len=seq_len, reshape=True, model_path=model_path)
+        real_data = motor_fault_train(n_samples=real_samples, oneD=True)
+
+        self.data = np.concatenate((syn_data.data, real_data.X_train), axis=0)
+        self.labels = np.concatenate((syn_data.labels, real_data.y_train), axis=0)
+
+        print(f'data shape is {self.data.shape}')
+        print(f'labels shape is {self.labels.shape}')
+
+    def __len__(self):
+        return len(self.labels)
+
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
