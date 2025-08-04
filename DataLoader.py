@@ -114,6 +114,7 @@ class motor_fault_train(Dataset):
         if n_samples is None:
             n_samples = min(len(data_train[data_train[label_col] == c]) for c in classes)
 
+
         resampled = []
         for c in classes:
             data_c = data_train[data_train[label_col] == c]
@@ -121,16 +122,13 @@ class motor_fault_train(Dataset):
 
         train_dataset = pd.concat(resampled)
 
+
         self.X_train = train_dataset.drop(columns=[label_col]).values
         if oneD:
             self.X_train = self.X_train.reshape(self.X_train.shape[0], 1, self.X_train.shape[1])
         else:
             self.X_train = self.X_train.reshape(self.X_train.shape[0], 1, 1, self.X_train.shape[1])
-        self.y_train = train_dataset[label_col].values
 
-        print(f'X_train shape is {self.X_train.shape}')
-        print(f'y_train shape is {self.y_train.shape}')
-        counts = {int(c): int((self.y_train == c).sum()) for c in classes}
         print(f'Class distribution: {counts}')
 
     def __len__(self):
