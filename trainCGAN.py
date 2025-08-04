@@ -91,9 +91,7 @@ def main_worker(gpu, ngpus_per_node, args):
             nn.init.normal_(m.weight.data, 1.0, 0.02)
             nn.init.constant_(m.bias.data, 0.0)
 
-    # load dataset to determine sequence length and classes
-    train_set = motor_fault_train()
-    train_loader = data.DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=True)
+
     seq_len = train_set.X_train.shape[-1]
     num_classes = len(np.unique(train_set.y_train))
 

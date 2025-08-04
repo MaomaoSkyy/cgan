@@ -115,6 +115,7 @@ class motor_fault_train(Dataset):
             n_samples = min(len(data_train[data_train[label_col] == c]) for c in classes)
 
 
+
         resampled = []
         for c in classes:
             data_c = data_train[data_train[label_col] == c]
