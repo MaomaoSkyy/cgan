@@ -199,9 +199,6 @@ class PatchEmbedding_Linear(nn.Module):
         # position
         x += self.positions
         return x    
-'''
-
-'''        
         
 class Discriminator(nn.Sequential):
     def __init__(self, 
@@ -218,4 +215,4 @@ class Discriminator(nn.Sequential):
             Dis_TransformerEncoder(depth, emb_size=data_emb_size, drop_p=0.5, forward_drop_p=0.5, **kwargs),
             ClassificationHead(data_emb_size, 1, n_classes)
         )
-        
+
