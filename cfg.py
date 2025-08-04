@@ -174,6 +174,11 @@ def parse_args():
         type=str,
         default='./data',
         help='The path of data set')
+    parser.add_argument(
+        '--fft_dir',
+        type=str,
+        default='data/processed_fft',
+        help='Directory containing FFT-processed training data')
     parser.add_argument('--init_type', type=str, default='normal',
                         choices=['normal', 'orth', 'xavier_uniform', 'false'],
                         help='The init type')
